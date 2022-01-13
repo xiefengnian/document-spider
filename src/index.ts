@@ -1,10 +1,8 @@
 import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { parse, format } from 'url';
-// import parse5 from 'parse5';
 import fs from 'fs';
-import rimraf from 'rimraf';
-import { getDocumentConstruct } from './utils';
+import { getDocumentConstruct, shouldNotEntry } from './utils';
 import { join } from 'path';
 
 export type Docs = {
@@ -23,6 +21,7 @@ export type Docs = {
 type Options = {
   mainContainer: string;
   excludesContainers?: string[];
+  excludeHref?: RegExp[];
 };
 
 const websites: {
@@ -30,30 +29,40 @@ const websites: {
   entry: string;
   options: Options;
 }[] = [
+  // {
+  //   name: 'antd',
+  //   entry: 'https://ant.design/index-cn',
+  //   options: {
+  //     mainContainer: '.main-container',
+  //     excludesContainers: ['.rc-footer', '.toc-affix'],
+  //   },
+  // },
   {
-    name: 'antd',
-    entry: 'https://ant.design/index-cn',
+    name: 'umi',
+    entry: 'https://umijs.org/config',
     options: {
-      mainContainer: '.main-container',
-      excludesContainers: ['.rc-footer', '.toc-affix'],
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
     },
   },
 ];
 
-const start = async (entryWebsite: string, options: Options) => {
+const start = async (entryWebsite: string, name: string, options: Options) => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  page.setViewport({
+  await page.setViewport({
     width: 1920,
     height: 1080,
   });
-
   const cache = new Set();
 
   let topDoc: Docs | undefined = undefined;
 
   const getWebsite = async (website: string) => {
-    if (cache.has(website) || !/-cn/.test(website)) {
+    if (
+      cache.has(website) ||
+      shouldNotEntry(website, options.excludeHref || [])
+    ) {
       return;
     }
     console.log(website);
@@ -78,10 +87,10 @@ const start = async (entryWebsite: string, options: Options) => {
     const mainContainer = $(
       `${mainContainerClassName}`
     ) as cheerio.Cheerio<cheerio.Element>;
-    const construct = getDocumentConstruct(mainContainer, website);
+    const construct = getDocumentConstruct(mainContainer, website, name);
 
     // 删除多余 dom
-    options.excludesContainers.forEach((containerSelector) => {
+    options.excludesContainers?.forEach((containerSelector) => {
       $(containerSelector).remove();
     });
 
@@ -123,7 +132,7 @@ const start = async (entryWebsite: string, options: Options) => {
 const main = async () => {
   const result = [];
   for await (const aWebsite of websites) {
-    result.push(await start(aWebsite.entry, aWebsite.options));
+    result.push(await start(aWebsite.entry, aWebsite.name, aWebsite.options));
   }
 
   fs.writeFileSync(

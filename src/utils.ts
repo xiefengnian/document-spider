@@ -47,11 +47,13 @@ type DocConstructWithTag = {
 
 export const getDocumentConstruct = (
   root: cheerio.Cheerio<cheerio.Element>,
-  entryUrl: string
+  entryUrl: string,
+  /** website name */
+  name: string
 ): DocConstructWithTag[] => {
   // 提前处理 table
 
-  const stringifyTable = (root: cheerio.Cheerio<cheerio.Element>) => {
+  const stringifyTable = () => {
     const tables = root.find('table');
 
     tables.each((i) => {
@@ -65,7 +67,7 @@ export const getDocumentConstruct = (
     });
   };
 
-  stringifyTable(root);
+  stringifyTable();
 
   const getHtmlConstruct = (
     ele: cheerio.Cheerio<cheerio.Element>,
@@ -74,22 +76,15 @@ export const getDocumentConstruct = (
     const children = ele.children();
     children?.each((i) => {
       const child = children.eq(i);
-      const { type, name } = child[0];
+      const { type, name: tagName } = child[0];
       const id = child.attr('id');
       const result = {
-        tagName: name,
+        tagName: tagName,
         text: child.text(),
         children: [],
         url: id ? entryUrl + '#' + id : '',
         className: child.attr('class') || '',
       };
-
-      if (name === 'table') {
-        result.text = JSON.stringify(
-          Tabletojson.convert(child.parent().html() || '')
-        );
-        return;
-      }
       if (type === 'text') {
         construct.text += (child as any)[0].data;
       } else {
@@ -112,8 +107,8 @@ export const getDocumentConstruct = (
 
   const isTitle = (tagName: string) => /^h[1-6]$/.test(tagName);
 
-  const getRequiredNode = (root: SerializationHtml) => {
-    const { children } = root;
+  const getRequiredNode = (current: SerializationHtml) => {
+    const { children } = current;
 
     // 不能直接抽取 code 标签，因为在 antd 中 demo 没有层级关系
     /**
@@ -122,8 +117,9 @@ export const getDocumentConstruct = (
      *  <section class="highlight-wrapper"></section>
      * </section>
      */
-    if (root.className === 'code-box') {
-      const url = root.url;
+
+    if (name === 'antd' && current.className === 'code-box') {
+      const url = current.url;
       let title = '';
       let content = '';
       const getChildren = (node: SerializationHtml) => {
@@ -139,12 +135,22 @@ export const getDocumentConstruct = (
           getChildren(child);
         });
       };
-      getChildren(root);
+      getChildren(current);
       result2.push({
-        ...root,
+        ...current,
         url,
         content,
         title,
+        children: [],
+        tagName: 'code', // 对代码标签归一化
+      });
+      return;
+    }
+
+    if (name === 'umi' && current.className === '__dumi-default-code-block') {
+      result2.push({
+        ...current,
+        tagName: 'code', // 对代码标签归一化
         children: [],
       });
       return;
@@ -157,8 +163,14 @@ export const getDocumentConstruct = (
           let content = '';
           for (let j = i + 1; j < children.length; j++) {
             const nextChild = children[j];
+            console.log(nextChild.tagName, nextChild.className);
             if (isTitle(nextChild.tagName)) {
+              i = j - 1;
               break;
+            }
+            if (nextChild.className === '__dumi-default-code-block') {
+              getRequiredNode(nextChild);
+              continue;
             }
             content += nextChild.text;
           }
@@ -174,8 +186,10 @@ export const getDocumentConstruct = (
     }
   };
 
+  // 抽取必须的节点，其余省略
   getRequiredNode(cloneDeep(result));
 
+  // 转化一轮格式
   const result3: DocConstructWithTagName[] = result2.map(
     ({ text, tagName, content, url, className, title }) => {
       if (isTitle(tagName)) {
@@ -206,11 +220,12 @@ export const getDocumentConstruct = (
 
   const result4: DocConstructWithTag[] = [];
 
+  // 最后整理数据结构
   for (let i = 0; i < result3.length; i++) {
     const header: DocConstructWithTag & { tagName: string } = {
       ...result3[i],
       tag:
-        result3[i].className === 'code-box'
+        result3[i].tagName === 'code'
           ? 'DEMO'
           : /API/.test(result3[i].title)
           ? 'API'
@@ -220,7 +235,7 @@ export const getDocumentConstruct = (
     if (header.tagName === 'h1') {
       result4.push(header);
     } else {
-      if (header.className === 'code-box') {
+      if (header.tagName === 'code') {
         if (i > 0) {
           let doneInsert = false;
           for (let j = i - 1; j > -1; j--) {
@@ -259,4 +274,8 @@ export const getDocumentConstruct = (
     }
   }
   return result4;
+};
+
+export const shouldNotEntry = (website: string, regexps: RegExp[]) => {
+  return regexps.some((regexp) => regexp.test(website));
 };
