@@ -6,7 +6,20 @@ import fs from 'fs';
 import rimraf from 'rimraf';
 import { getDocumentConstruct } from './utils';
 
-const entryWebsite = 'https://ant.design/docs/spec/introduce-cn';
+export type Docs = {
+  // 页面标题
+  title: string;
+  // 页面路径
+  url: string;
+  // 子级的数据
+  toc: Docs[];
+  // 文本内容
+  content: string;
+  // 页面中的超链接
+  links: { title: string; url: string }[];
+};
+
+const entryWebsite = 'https://ant.design/docs/react/introduce-cn';
 
 const start = async (entryWebsite: string) => {
   rimraf.sync('./docs');
@@ -20,54 +33,76 @@ const start = async (entryWebsite: string) => {
 
   const cache = new Set();
 
+  let topDoc: Docs | undefined = undefined;
+
   const getWebsite = async (website: string) => {
-    console.log('goto', website);
-    if (cache.has(website)) {
+    if (cache.has(website) || !/-cn/.test(website)) {
       return;
     }
+    console.log(website);
+
     cache.add(website);
 
     const urlObject = parse(website);
-
-    await page.goto(website);
+    try {
+      await page.goto(website);
+    } catch (error) {
+      console.log('lose ', website);
+      console.log(error);
+      return;
+    }
 
     const content = await page.content();
 
     const $ = cheerio.load(content);
 
+    const header = $('.main-container');
+    const construct = getDocumentConstruct(header, website);
+
+    // 删除多余 dom
+    $('.rc-footer').remove();
+    $('.toc-affix').remove();
+
     const links = $('a');
 
-    const header = $('.markdown');
+    const docs: Docs = {
+      // @ts-ignore
+      toc: construct,
+      title: $('title').text(),
+      url: website,
+      content: '',
+      links: [
+        ...links.map((i) => ({
+          title: links.eq(i).text(),
+          url: links.eq(i).attr('href') || '',
+        })),
+      ],
+    };
 
-    const containerSet = new Set();
-
-    const result: any[] = [];
-
-    header.each((i, el) => {
-      const currentContainer = header.eq(i);
-      if (containerSet.has(currentContainer)) {
-        return;
-      }
-      containerSet.add(currentContainer);
-      const construct = getDocumentConstruct(currentContainer);
-      result.push(construct);
-    });
-
-    fs.writeFileSync(
-      `./docs/${urlObject.pathname?.replace(/\//g, '_')}.json`,
-      JSON.stringify(result, undefined, 2),
-      'utf-8'
-    );
+    if (!topDoc) {
+      topDoc = docs;
+    } else {
+      topDoc.toc.push(docs);
+    }
 
     for (let i = 0; i < 1; i++) {
       const href = links.eq(i).attr('href');
       if (href?.startsWith('/') && !href?.startsWith('//') && href !== '/') {
-        console.log(href);
         await getWebsite(format({ ...urlObject, pathname: href }));
       }
     }
   };
-  await getWebsite(entryWebsite);
+  try {
+    await getWebsite(entryWebsite);
+  } catch (error) {
+    throw error;
+  }
+
+  fs.writeFileSync(
+    './antd.json',
+    JSON.stringify(topDoc, undefined, 2),
+    'utf-8'
+  );
   browser.close();
 };
 start(entryWebsite);

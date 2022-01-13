@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/xiefengnian/document-spider#readme",
   "devDependencies": {
+    "@types/lodash": "^4.14.178",
     "@types/rimraf": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
@@ -29,8 +30,10 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",
+    "lodash": "^4.17.21",
     "parse5": "^6.0.1",
     "puppeteer": "^13.0.1",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "tabletojson": "^2.0.7"
   }
 }
