@@ -56,7 +56,6 @@ export const getDocumentConstruct = (
 
     tables.each((i) => {
       const table = tables.eq(i);
-      debugger;
       table.replaceWith(
         `
         <div class="table_placeholder">${JSON.stringify(
@@ -102,7 +101,6 @@ export const getDocumentConstruct = (
 
   // 抽取 html 结构
   const result = getHtmlConstruct(root, {
-    // @ts-ignore
     text: root.text(),
     tagName: root[0]?.name,
     children: [],
@@ -125,7 +123,7 @@ export const getDocumentConstruct = (
      * </section>
      */
     if (root.className === 'code-box') {
-      let url = root.url;
+      const url = root.url;
       let title = '';
       let content = '';
       const getChildren = (node: SerializationHtml) => {
@@ -260,6 +258,5 @@ export const getDocumentConstruct = (
       }
     }
   }
-  debugger;
   return result4;
 };

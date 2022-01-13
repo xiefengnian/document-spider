@@ -108,5 +108,3 @@ dist
 docs
 
 .DS_Store
-
-package-lock.json

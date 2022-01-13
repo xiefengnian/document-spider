@@ -5,6 +5,7 @@ import { parse, format } from 'url';
 import fs from 'fs';
 import rimraf from 'rimraf';
 import { getDocumentConstruct } from './utils';
+import { join } from 'path';
 
 export type Docs = {
   // 页面标题
@@ -19,11 +20,27 @@ export type Docs = {
   links: { title: string; url: string }[];
 };
 
-const entryWebsite = 'https://ant.design/docs/react/introduce-cn';
+type Options = {
+  mainContainer: string;
+  excludesContainers?: string[];
+};
 
-const start = async (entryWebsite: string) => {
-  rimraf.sync('./docs');
-  fs.mkdirSync('./docs');
+const websites: {
+  name: string;
+  entry: string;
+  options: Options;
+}[] = [
+  {
+    name: 'antd',
+    entry: 'https://ant.design/index-cn',
+    options: {
+      mainContainer: '.main-container',
+      excludesContainers: ['.rc-footer', '.toc-affix'],
+    },
+  },
+];
+
+const start = async (entryWebsite: string, options: Options) => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   page.setViewport({
@@ -56,16 +73,22 @@ const start = async (entryWebsite: string) => {
 
     const $ = cheerio.load(content);
 
-    const header = $('.main-container');
-    const construct = getDocumentConstruct(header, website);
+    const mainContainerClassName = options.mainContainer;
+
+    const mainContainer = $(
+      `${mainContainerClassName}`
+    ) as cheerio.Cheerio<cheerio.Element>;
+    const construct = getDocumentConstruct(mainContainer, website);
 
     // 删除多余 dom
-    $('.rc-footer').remove();
-    $('.toc-affix').remove();
+    options.excludesContainers.forEach((containerSelector) => {
+      $(containerSelector).remove();
+    });
 
     const links = $('a');
 
     const docs: Docs = {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       toc: construct,
       title: $('title').text(),
@@ -92,17 +115,22 @@ const start = async (entryWebsite: string) => {
       }
     }
   };
-  try {
-    await getWebsite(entryWebsite);
-  } catch (error) {
-    throw error;
+  await getWebsite(entryWebsite);
+  browser.close();
+  return topDoc;
+};
+
+const main = async () => {
+  const result = [];
+  for await (const aWebsite of websites) {
+    result.push(await start(aWebsite.entry, aWebsite.options));
   }
 
   fs.writeFileSync(
-    './antd.json',
-    JSON.stringify(topDoc, undefined, 2),
+    join(__dirname, '../docs/output.json'),
+    JSON.stringify(result, undefined, 2),
     'utf-8'
   );
-  browser.close();
 };
-start(entryWebsite);
+
+main();
