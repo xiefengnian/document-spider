@@ -134,7 +134,7 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     for await (const href of sortedLinks) {
       if (href?.startsWith('/') && !href?.startsWith('//') && href !== '/') {
-        await getWebsite(format({ ...urlObject, pathname: href, hash: '' }));
+        await getWebsite(format({ ...urlObject, pathname: href, hash: '' })); // 又是 href 后是带 hash 的，把原来的 hash 注销一下
       }
     }
   };
