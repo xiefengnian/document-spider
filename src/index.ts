@@ -2,8 +2,10 @@ import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { parse, format } from 'url';
 import fs from 'fs';
-import { getDocumentConstruct, shouldNotEntry } from './utils';
+import { getDocumentConstruct } from './utils/getDocumentConstruct';
+import { shouldEntry } from './utils/shouldEntry';
 import { join } from 'path';
+import { getCacheKey } from './utils/getCacheKey';
 
 export type Docs = {
   // 页面标题
@@ -21,7 +23,7 @@ export type Docs = {
 type Options = {
   mainContainer: string;
   excludesContainers?: string[];
-  excludeHref?: RegExp[];
+  urlFilters?: RegExp[];
 };
 
 const websites: {
@@ -31,25 +33,28 @@ const websites: {
 }[] = [
   // {
   //   name: 'antd',
-  //   entry: 'https://ant.design/index-cn',
+  //   entry: 'https://ant.design/components/button-cn/',
   //   options: {
   //     mainContainer: '.main-container',
   //     excludesContainers: ['.rc-footer', '.toc-affix'],
+  //     urlFilters: [/-cn/],
   //   },
   // },
   {
     name: 'umi',
-    entry: 'https://umijs.org/config',
+    entry: 'https://umijs.org/zh-CN',
     options: {
       mainContainer: '.markdown',
       excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
     },
   },
 ];
 
 const start = async (entryWebsite: string, name: string, options: Options) => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({});
   const page = await browser.newPage();
+  await page.setDefaultNavigationTimeout(0);
   await page.setViewport({
     width: 1920,
     height: 1080,
@@ -59,17 +64,22 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
   let topDoc: Docs | undefined = undefined;
 
   const getWebsite = async (website: string) => {
+    // https://a.com/#中文 和 https://a.com#中文 应该视为相同的网站
+    const cacheKey = getCacheKey(website);
     if (
-      cache.has(website) ||
-      shouldNotEntry(website, options.excludeHref || [])
+      cache.has(cacheKey) ||
+      !shouldEntry(website, options.urlFilters || [])
     ) {
+      console.log('! throw', cacheKey);
       return;
+    } else {
+      console.log('into', cacheKey);
     }
-    console.log(website);
+    cache.add(cacheKey);
 
-    cache.add(website);
+    const urlObject = parse(cacheKey);
 
-    const urlObject = parse(website);
+    let content = '';
     try {
       await page.goto(website);
     } catch (error) {
@@ -77,8 +87,7 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
       console.log(error);
       return;
     }
-
-    const content = await page.content();
+    content = await page.content();
 
     const $ = cheerio.load(content);
 
@@ -117,10 +126,15 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
       topDoc.toc.push(docs);
     }
 
-    for (let i = 0; i < 1; i++) {
-      const href = links.eq(i).attr('href');
+    // 相同链接hash不同的，优先跳转，避免页面重复 reload
+    const sortedLinks = links
+      .map((i) => links.eq(i).attr('href'))
+      .toArray()
+      .sort();
+
+    for await (const href of sortedLinks) {
       if (href?.startsWith('/') && !href?.startsWith('//') && href !== '/') {
-        await getWebsite(format({ ...urlObject, pathname: href }));
+        await getWebsite(format({ ...urlObject, pathname: href, hash: '' }));
       }
     }
   };

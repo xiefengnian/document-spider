@@ -1,0 +1,156 @@
+[
+  {
+    "content": "\n        \n          antd 是基于 Ant Design 设计体系的 React UI\n          组件库，主要用于研发企业级中后台产品。\n        \n        \n          +\n        \n        \n      ",
+    "tagName": "h1",
+    "title": "\n        Ant Design of React\n              \n      ",
+    "toc": [
+      {
+        "content": "\n        🌈 提炼自企业级中后台产品的交互语言和视觉风格。\n        📦 开箱即用的高质量 React 组件。\n        🛡 使用 TypeScript 开发，提供完整的类型定义文件。\n        ⚙️ 全链路开发和设计工具体系。\n        🌍 数十个国际化语言支持。\n        🎨 深入每个细节的主题定制能力。\n      ",
+        "tagName": "h2",
+        "title": "\n        ✨ 特性#\n      ",
+        "toc": [],
+        "tag": "TEXT",
+        "url": "/#✨-特性",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "\n        \n          \n            现代浏览器和 IE11（需要\n            polyfills）。\n          \n        \n        支持服务端渲染。\n        \n          Electron\n        \n      \n        对于 IE 系列浏览器，需要提供相应的 Polyfill 支持，建议使用\n        @babel/preset-env\n        来解决浏览器兼容问题。如果你在使用\n        umi，可以直接使用\n        targets 配置。\n      \n        \n          antd@2.0 之后不再支持 IE8。\n          antd@4.0 之后不再支持 React 15 和 IE9/10。\n        \n      ",
+        "tagName": "h2",
+        "title": "\n        兼容环境#\n      ",
+        "toc": [
+          {
+            "content": "[{\"IE / Edge\":\"IE11, Edge\",\"Firefox\":\"last 2 versions\",\"Chrome\":\"last 2 versions\",\"Safari\":\"last 2 versions\",\"Opera\":\"last 2 versions\",\"Electron\":\"last 2 versions\"}]",
+            "tagName": "div",
+            "title": "",
+            "toc": [],
+            "tag": "TEXT",
+            "url": "",
+            "className": "DS__internal_table_placeholder",
+            "links": []
+          }
+        ],
+        "tag": "TEXT",
+        "url": "/#兼容环境",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "\n        \n          \n            稳定版：\n          \n        \n      \n        你可以订阅：https://github.com/ant-design/ant-design/releases.atom\n        或\n        https://app.releasly.co/sites/ant-design/ant-design\n        来获得版本发布的通知。\n      ",
+        "tagName": "h2",
+        "title": "\n        版本#\n      ",
+        "toc": [],
+        "tag": "TEXT",
+        "url": "/#版本",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "",
+        "tagName": "h2",
+        "title": "\n        安装#\n      ",
+        "toc": [
+          {
+            "content": "\n        我们推荐使用 npm 或 yarn 的方式进行开发，不仅可在开发环境轻松调试，也可放心地在生产环境打包部署使用，享受整个生态圈和工具链带来的诸多好处。\n      $ npm install antd --save$ yarn add antd\n        如果你的网络环境不佳，推荐使用\n        cnpm。\n      ",
+            "tagName": "h3",
+            "title": "\n        使用 npm 或 yarn 安装#\n      ",
+            "toc": [],
+            "tag": "TEXT",
+            "url": "/#使用-npm-或-yarn-安装",
+            "className": "",
+            "links": []
+          },
+          {
+            "content": "\n        在浏览器中使用 script 和\n        link 标签直接引入文件，并使用全局变量 antd。\n      \n        我们在 npm 发布包内的 antd/dist 目录下提供了\n        antd.js antd.css 以及\n        antd.min.js antd.min.css。你也可以通过\n        ，\n        或 UNPKG 进行下载。\n      \n        \n          强烈不推荐使用已构建文件，这样无法按需加载，而且难以获得底层依赖模块的 bug 快速修复支持。\n        \n        \n          注意：antd.js 和 antd.min.js 依赖\n          react/react-dom/moment，请确保提前引入这些文件。\n        \n      ",
+            "tagName": "h3",
+            "title": "\n        浏览器引入#\n      ",
+            "toc": [],
+            "tag": "TEXT",
+            "url": "/#浏览器引入",
+            "className": "",
+            "links": []
+          }
+        ],
+        "tag": "TEXT",
+        "url": "/#安装",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "import { DatePicker } from 'antd';\n    \n    ReactDOM.render(<DatePicker />, mountNode);引入样式：import 'antd/dist/antd.css'; // or 'antd/dist/antd.less'",
+        "tagName": "h2",
+        "title": "\n        示例#\n      ",
+        "toc": [
+          {
+            "content": "\n        antd 的 JS 代码默认支持基于 ES modules 的 tree shaking。\n      ",
+            "tagName": "h3",
+            "title": "\n        按需加载#\n      ",
+            "toc": [],
+            "tag": "TEXT",
+            "url": "/#按需加载",
+            "className": "",
+            "links": []
+          },
+          {
+            "content": "\n        antd 使用 TypeScript\n        进行书写并提供了完整的定义文件。（不要引用 @types/antd）。\n      ",
+            "tagName": "h3",
+            "title": "\n        TypeScript#\n      ",
+            "toc": [],
+            "tag": "TEXT",
+            "url": "/#TypeScript",
+            "className": "",
+            "links": []
+          }
+        ],
+        "tag": "TEXT",
+        "url": "/#示例",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "\n        \n          首页\n        \n        \n          组件库\n        \n        \n          Ant Design Pro\n        \n        \n          Ant Design Charts\n        \n        \n          更新日志\n        \n        \n          \n            React 底层基础组件\n          \n        \n        \n          移动端组件\n        \n        \n          \n            Ant Design 图标\n          \n        \n        \n          \n            Ant Design 色彩\n          \n        \n        \n          \n            Ant Design Pro 布局组件\n          \n        \n        \n          \n            Ant Design Pro 区块集\n          \n        \n        \n          \n            Dark Theme\n          \n        \n        \n          首页模板集\n        \n        \n          动效\n        \n        \n          脚手架市场\n        \n        \n          \n            设计规范速查手册\n          \n        \n        \n          \n            开发者说明\n          \n        \n        \n          \n            版本发布规则\n          \n        \n        \n          常见问题\n        \n        \n          \n            CodeSandbox 模板\n            for bug reports\n          \n        \n        \n          \n            Awesome Ant Design\n          \n        \n        \n          定制主题\n        \n        \n          \n            成为社区协作成员\n          \n        \n      ",
+        "tagName": "h2",
+        "title": "\n        链接#\n      ",
+        "toc": [],
+        "tag": "TEXT",
+        "url": "/#链接",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "\n        \n          蚂蚁金服\n        \n        \n          阿里巴巴\n        \n        \n          腾讯\n        \n        \n          百度\n        \n        \n          口碑\n        \n        \n          美团\n        \n        \n          滴滴\n        \n        \n          饿了么\n        \n      \n        \n          如果你的公司和产品使用了 Ant Design，欢迎到\n          这里\n          留言。\n        \n      ",
+        "tagName": "h2",
+        "title": "\n        谁在使用#\n      ",
+        "toc": [],
+        "tag": "TEXT",
+        "url": "/#谁在使用",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "\n        在任何形式的参与前，请先阅读\n        贡献者文档。如果你希望参与贡献，欢迎\n        Pull Request，或给我们 报告 Bug。\n      \n        \n          强烈推荐阅读\n          《提问的智慧》、《如何向开源社区提问题》\n          和\n          《如何有效地报告 Bug》、《如何向开源项目提交无法解答的问题》，更好的问题更容易获得帮助。\n        \n      ",
+        "tagName": "h2",
+        "title": "\n        如何贡献#\n      ",
+        "toc": [],
+        "tag": "TEXT",
+        "url": "/#如何贡献",
+        "className": "",
+        "links": []
+      },
+      {
+        "content": "\n        如果您在使用的过程中碰到问题，可以通过下面几个途径寻求帮助，同时我们也鼓励资深用户通过下面的途径给新人提供帮助。\n      \n        通过 GitHub Discussions 提问时，建议使用 Q&A 标签。\n      \n        通过 Stack Overflow 或者 Segment Fault 提问时，建议加上\n        antd 标签。\n      \n        \n          \n            GitHub Discussions\n          \n        \n        \n          \n            (English)\n          \n        \n        \n          \n            (中文)\n          \n        \n      ",
+        "tagName": "h2",
+        "title": "\n        社区互助#\n      ",
+        "toc": [],
+        "tag": "TEXT",
+        "url": "/#社区互助",
+        "className": "",
+        "links": []
+      }
+    ],
+    "tag": "TEXT",
+    "url": "",
+    "className": "",
+    "links": []
+  }
+]
