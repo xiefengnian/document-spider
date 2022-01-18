@@ -31,51 +31,50 @@ const websites: {
   entry: string;
   options: Options;
 }[] = [
-  {
-    name: 'antd',
-    entry: 'https://ant.design/components/button-cn/',
-    options: {
-      mainContainer: '.main-container',
-      excludesContainers: ['.rc-footer', '.toc-affix'],
-      urlFilters: [/-cn/],
-    },
-  },
-  {
-    name: 'umi',
-    entry: 'https://umijs.org/zh-CN',
-    options: {
-      mainContainer: '.markdown',
-      excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
-    },
-  },
+  // {
+  //   name: 'antd',
+  //   entry: 'https://ant.design/components/button-cn/',
+  //   options: {
+  //     mainContainer: '.main-container',
+  //     excludesContainers: ['.rc-footer', '.toc-affix'],
+  //     urlFilters: [/-cn/],
+  //   },
+  // },
+  // {
+  //   name: 'umi',
+  //   entry: 'https://umijs.org/zh-CN',
+  //   options: {
+  //     mainContainer: '.markdown',
+  //     excludesContainers: ['.__dumi-default-layout-toc'],
+  //     urlFilters: [/zh-CN/],
+  //   },
+  // },
   {
     name: 'procomponents',
-    entry: 'https://procomponents.ant.design',
+    entry: 'https://procomponents.ant.design/',
     options: {
       mainContainer: '.markdown',
       excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
     },
   },
-  {
-    name: 'dumi',
-    entry: 'https://d.umijs.org',
-    options: {
-      mainContainer: '.markdown',
-      excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
-    },
-  },
-  {
-    name: 'ant design pro',
-    entry: 'https://pro.ant.design',
-    options: {
-      mainContainer: '.markdown',
-      excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
-    },
-  },
+  // {
+  //   name: 'dumi',
+  //   entry: 'https://d.umijs.org',
+  //   options: {
+  //     mainContainer: '.markdown',
+  //     excludesContainers: ['.__dumi-default-layout-toc'],
+  //     urlFilters: [/zh-CN/],
+  //   },
+  // },
+  // {
+  //   name: 'ant design pro',
+  //   entry: 'https://pro.ant.design',
+  //   options: {
+  //     mainContainer: '.markdown',
+  //     excludesContainers: ['.__dumi-default-layout-toc'],
+  //     urlFilters: [/zh-CN/],
+  //   },
+  // },
 ];
 
 const start = async (entryWebsite: string, name: string, options: Options) => {
