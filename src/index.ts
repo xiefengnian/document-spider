@@ -24,6 +24,7 @@ type Options = {
   mainContainer: string;
   excludesContainers?: string[];
   urlFilters?: RegExp[];
+  urlIgnores?: RegExp[];
 };
 
 const websites: {
@@ -55,6 +56,7 @@ const websites: {
     options: {
       mainContainer: '.markdown',
       excludesContainers: ['.__dumi-default-layout-toc'],
+      urlIgnores: [/en-US/],
     },
   },
   // {
@@ -92,7 +94,10 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
   const getWebsite = async (website: string) => {
     // https://a.com/#中文 和 https://a.com#中文 应该视为相同的网站
     const cacheKey = getCacheKey(website);
-    if (cache.has(cacheKey) || !shouldEntry(website, options.urlFilters || [])) {
+    if (
+      cache.has(cacheKey) ||
+      !shouldEntry(website, options.urlIgnores || [], options.urlFilters || [])
+    ) {
       console.log('已经缓存或不需要，忽略：', cacheKey);
       return;
     } else {
@@ -116,7 +121,9 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     const mainContainerClassName = options.mainContainer;
 
-    const mainContainer = $(`${mainContainerClassName}`) as cheerio.Cheerio<cheerio.Element>;
+    const mainContainer = $(
+      `${mainContainerClassName}`
+    ) as cheerio.Cheerio<cheerio.Element>;
     const construct = getDocumentConstruct(mainContainer, cacheKey, name);
 
     // 删除多余 dom
@@ -190,7 +197,11 @@ const main = async () => {
     result.push(await start(aWebsite.entry, aWebsite.name, aWebsite.options));
   }
 
-  fs.writeFileSync(join(__dirname, '../docs/output.json'), JSON.stringify(result, undefined, 2), 'utf-8');
+  fs.writeFileSync(
+    join(__dirname, '../docs/output.json'),
+    JSON.stringify(result, undefined, 2),
+    'utf-8'
+  );
 };
 
 main();
