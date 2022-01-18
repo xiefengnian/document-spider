@@ -31,15 +31,15 @@ const websites: {
   entry: string;
   options: Options;
 }[] = [
-  {
-    name: 'antd',
-    entry: 'https://ant.design/components/button-cn/',
-    options: {
-      mainContainer: '.main-container',
-      excludesContainers: ['.rc-footer', '.toc-affix'],
-      urlFilters: [/-cn/],
-    },
-  },
+  // {
+  //   name: 'antd',
+  //   entry: 'https://ant.design/components/button-cn/',
+  //   options: {
+  //     mainContainer: '.main-container',
+  //     excludesContainers: ['.rc-footer', '.toc-affix'],
+  //     urlFilters: [/-cn/],
+  //   },
+  // },
   {
     name: 'umi',
     entry: 'https://umijs.org/zh-CN',
@@ -49,33 +49,33 @@ const websites: {
       urlFilters: [/zh-CN/],
     },
   },
-  {
-    name: 'procomponents',
-    entry: 'https://procomponents.ant.design',
-    options: {
-      mainContainer: '.markdown',
-      excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
-    },
-  },
-  {
-    name: 'dumi',
-    entry: 'https://d.umijs.org',
-    options: {
-      mainContainer: '.markdown',
-      excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
-    },
-  },
-  {
-    name: 'ant design pro',
-    entry: 'https://pro.ant.design',
-    options: {
-      mainContainer: '.markdown',
-      excludesContainers: ['.__dumi-default-layout-toc'],
-      urlFilters: [/zh-CN/],
-    },
-  },
+  // {
+  //   name: 'procomponents',
+  //   entry: 'https://procomponents.ant.design',
+  //   options: {
+  //     mainContainer: '.markdown',
+  //     excludesContainers: ['.__dumi-default-layout-toc'],
+  //     urlFilters: [/zh-CN/],
+  //   },
+  // },
+  // {
+  //   name: 'dumi',
+  //   entry: 'https://d.umijs.org',
+  //   options: {
+  //     mainContainer: '.markdown',
+  //     excludesContainers: ['.__dumi-default-layout-toc'],
+  //     urlFilters: [/zh-CN/],
+  //   },
+  // },
+  // {
+  //   name: 'ant design pro',
+  //   entry: 'https://pro.ant.design',
+  //   options: {
+  //     mainContainer: '.markdown',
+  //     excludesContainers: ['.__dumi-default-layout-toc'],
+  //     urlFilters: [/zh-CN/],
+  //   },
+  // },
 ];
 
 const start = async (entryWebsite: string, name: string, options: Options) => {
@@ -93,7 +93,10 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
   const getWebsite = async (website: string) => {
     // https://a.com/#中文 和 https://a.com#中文 应该视为相同的网站
     const cacheKey = getCacheKey(website);
-    if (cache.has(cacheKey) || !shouldEntry(website, options.urlFilters || [])) {
+    if (
+      cache.has(cacheKey) ||
+      !shouldEntry(website, options.urlFilters || [])
+    ) {
       console.log('! throw', cacheKey);
       return;
     } else {
@@ -105,9 +108,9 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     let content = '';
     try {
-      await page.goto(website);
+      await page.goto(cacheKey);
     } catch (error) {
-      console.log('lose ', website);
+      console.log('lose ', cacheKey);
       console.log(error);
       return;
     }
@@ -117,8 +120,10 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     const mainContainerClassName = options.mainContainer;
 
-    const mainContainer = $(`${mainContainerClassName}`) as cheerio.Cheerio<cheerio.Element>;
-    const construct = getDocumentConstruct(mainContainer, website, name);
+    const mainContainer = $(
+      `${mainContainerClassName}`
+    ) as cheerio.Cheerio<cheerio.Element>;
+    const construct = getDocumentConstruct(mainContainer, cacheKey, name);
 
     // 删除多余 dom
     options.excludesContainers?.forEach((containerSelector) => {
@@ -127,25 +132,45 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     const links = $('a');
 
+    const getLinks = () => {
+      const urlSet = new Set<string>();
+      const tmpLinks: { title: string; url: string }[] = [];
+      links.map((i) =>
+        tmpLinks.push({
+          title: links.eq(i).text(),
+          url: links.eq(i).attr('href') || '',
+        })
+      );
+      const result: typeof tmpLinks = [];
+      for (let i = 0; i < tmpLinks.length; i++) {
+        if (urlSet.has(tmpLinks[i].url) || !tmpLinks[i].title) {
+          continue;
+        }
+        urlSet.add(tmpLinks[i].url);
+        result.push(tmpLinks[i]);
+      }
+      return result;
+    };
+
     const docs: Docs = {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       toc: construct,
       title: $('title').text(),
-      url: website,
+      url: cacheKey,
       content: '',
-      links: [
-        ...links.map((i) => ({
-          title: links.eq(i).text(),
-          url: links.eq(i).attr('href') || '',
-        })),
-      ],
+      links: getLinks(),
     };
 
     if (!topDoc) {
       topDoc = docs;
     } else {
-      topDoc.toc.push(docs);
+      // 去除死链
+      if (!docs.content && docs.toc.length === 0) {
+        // do nothing
+      } else {
+        topDoc.toc.push(docs);
+      }
     }
 
     // 相同链接hash不同的，优先跳转，避免页面重复 reload
@@ -171,7 +196,11 @@ const main = async () => {
     result.push(await start(aWebsite.entry, aWebsite.name, aWebsite.options));
   }
 
-  fs.writeFileSync(join(__dirname, '../docs/output.json'), JSON.stringify(result, undefined, 2), 'utf-8');
+  fs.writeFileSync(
+    join(__dirname, '../docs/output.json'),
+    JSON.stringify(result, undefined, 2),
+    'utf-8'
+  );
 };
 
 main();
