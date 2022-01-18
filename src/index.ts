@@ -31,15 +31,15 @@ const websites: {
   entry: string;
   options: Options;
 }[] = [
-  // {
-  //   name: 'antd',
-  //   entry: 'https://ant.design/components/button-cn/',
-  //   options: {
-  //     mainContainer: '.main-container',
-  //     excludesContainers: ['.rc-footer', '.toc-affix'],
-  //     urlFilters: [/-cn/],
-  //   },
-  // },
+  {
+    name: 'antd',
+    entry: 'https://ant.design/components/button-cn/',
+    options: {
+      mainContainer: '.main-container',
+      excludesContainers: ['.rc-footer', '.toc-affix'],
+      urlFilters: [/-cn/],
+    },
+  },
   {
     name: 'umi',
     entry: 'https://umijs.org/zh-CN',
@@ -49,33 +49,33 @@ const websites: {
       urlFilters: [/zh-CN/],
     },
   },
-  // {
-  //   name: 'procomponents',
-  //   entry: 'https://procomponents.ant.design',
-  //   options: {
-  //     mainContainer: '.markdown',
-  //     excludesContainers: ['.__dumi-default-layout-toc'],
-  //     urlFilters: [/zh-CN/],
-  //   },
-  // },
-  // {
-  //   name: 'dumi',
-  //   entry: 'https://d.umijs.org',
-  //   options: {
-  //     mainContainer: '.markdown',
-  //     excludesContainers: ['.__dumi-default-layout-toc'],
-  //     urlFilters: [/zh-CN/],
-  //   },
-  // },
-  // {
-  //   name: 'ant design pro',
-  //   entry: 'https://pro.ant.design',
-  //   options: {
-  //     mainContainer: '.markdown',
-  //     excludesContainers: ['.__dumi-default-layout-toc'],
-  //     urlFilters: [/zh-CN/],
-  //   },
-  // },
+  {
+    name: 'procomponents',
+    entry: 'https://procomponents.ant.design',
+    options: {
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
+    },
+  },
+  {
+    name: 'dumi',
+    entry: 'https://d.umijs.org',
+    options: {
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
+    },
+  },
+  {
+    name: 'ant design pro',
+    entry: 'https://pro.ant.design',
+    options: {
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
+    },
+  },
 ];
 
 const start = async (entryWebsite: string, name: string, options: Options) => {
@@ -93,11 +93,8 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
   const getWebsite = async (website: string) => {
     // https://a.com/#中文 和 https://a.com#中文 应该视为相同的网站
     const cacheKey = getCacheKey(website);
-    if (
-      cache.has(cacheKey) ||
-      !shouldEntry(website, options.urlFilters || [])
-    ) {
-      console.log('! throw', cacheKey);
+    if (cache.has(cacheKey) || !shouldEntry(website, options.urlFilters || [])) {
+      console.log('已经缓存或不需要，忽略：', cacheKey);
       return;
     } else {
       console.log('into', cacheKey);
@@ -120,9 +117,7 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     const mainContainerClassName = options.mainContainer;
 
-    const mainContainer = $(
-      `${mainContainerClassName}`
-    ) as cheerio.Cheerio<cheerio.Element>;
+    const mainContainer = $(`${mainContainerClassName}`) as cheerio.Cheerio<cheerio.Element>;
     const construct = getDocumentConstruct(mainContainer, cacheKey, name);
 
     // 删除多余 dom
@@ -196,11 +191,7 @@ const main = async () => {
     result.push(await start(aWebsite.entry, aWebsite.name, aWebsite.options));
   }
 
-  fs.writeFileSync(
-    join(__dirname, '../docs/output.json'),
-    JSON.stringify(result, undefined, 2),
-    'utf-8'
-  );
+  fs.writeFileSync(join(__dirname, '../docs/output.json'), JSON.stringify(result, undefined, 2), 'utf-8');
 };
 
 main();
