@@ -193,6 +193,13 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
 const main = async () => {
   const result = [];
+
+  // create docs dir
+  const docsDir = join(__dirname, './docs');
+  if (!fs.existsSync(docsDir)) {
+    fs.mkdirSync(docsDir, { recursive: true });
+  }
+
   for await (const aWebsite of websites) {
     result.push(await start(aWebsite.entry, aWebsite.name, aWebsite.options));
   }
