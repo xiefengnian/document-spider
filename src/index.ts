@@ -32,24 +32,24 @@ const websites: {
   entry: string;
   options: Options;
 }[] = [
-  // {
-  //   name: 'antd',
-  //   entry: 'https://ant.design/components/button-cn/',
-  //   options: {
-  //     mainContainer: '.main-container',
-  //     excludesContainers: ['.rc-footer', '.toc-affix'],
-  //     urlFilters: [/-cn/],
-  //   },
-  // },
-  // {
-  //   name: 'umi',
-  //   entry: 'https://umijs.org/zh-CN',
-  //   options: {
-  //     mainContainer: '.markdown',
-  //     excludesContainers: ['.__dumi-default-layout-toc'],
-  //     urlFilters: [/zh-CN/],
-  //   },
-  // },
+  {
+    name: 'ant-design',
+    entry: 'https://ant.design/components/button-cn/',
+    options: {
+      mainContainer: '.main-container',
+      excludesContainers: ['.rc-footer', '.toc-affix'],
+      urlFilters: [/-cn/],
+    },
+  },
+  {
+    name: 'umi',
+    entry: 'https://umijs.org/zh-CN',
+    options: {
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
+    },
+  },
   {
     name: 'procomponents',
     entry: 'https://procomponents.ant.design/',
@@ -59,24 +59,24 @@ const websites: {
       urlIgnores: [/en-US/],
     },
   },
-  // {
-  //   name: 'dumi',
-  //   entry: 'https://d.umijs.org',
-  //   options: {
-  //     mainContainer: '.markdown',
-  //     excludesContainers: ['.__dumi-default-layout-toc'],
-  //     urlFilters: [/zh-CN/],
-  //   },
-  // },
-  // {
-  //   name: 'ant design pro',
-  //   entry: 'https://pro.ant.design',
-  //   options: {
-  //     mainContainer: '.markdown',
-  //     excludesContainers: ['.__dumi-default-layout-toc'],
-  //     urlFilters: [/zh-CN/],
-  //   },
-  // },
+  {
+    name: 'dumi',
+    entry: 'https://d.umijs.org',
+    options: {
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
+    },
+  },
+  {
+    name: 'ant-design-pro',
+    entry: 'https://pro.ant.design',
+    options: {
+      mainContainer: '.markdown',
+      excludesContainers: ['.__dumi-default-layout-toc'],
+      urlFilters: [/zh-CN/],
+    },
+  },
 ];
 
 const start = async (entryWebsite: string, name: string, options: Options) => {
@@ -89,15 +89,18 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
   });
   const cache = new Set();
 
-  let topDoc: Docs | undefined = undefined;
+  let topDoc: Docs = {
+    toc: [],
+    title: name,
+    url: entryWebsite,
+    content: '',
+    links: [],
+  };
 
   const getWebsite = async (website: string) => {
     // https://a.com/#中文 和 https://a.com#中文 应该视为相同的网站
     const cacheKey = getCacheKey(website);
-    if (
-      cache.has(cacheKey) ||
-      !shouldEntry(website, options.urlIgnores || [], options.urlFilters || [])
-    ) {
+    if (cache.has(cacheKey) || !shouldEntry(website, options.urlIgnores || [], options.urlFilters || [])) {
       console.log('已经缓存或不需要，忽略：', cacheKey);
       return;
     } else {
@@ -121,9 +124,7 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     const mainContainerClassName = options.mainContainer;
 
-    const mainContainer = $(
-      `${mainContainerClassName}`
-    ) as cheerio.Cheerio<cheerio.Element>;
+    const mainContainer = $(`${mainContainerClassName}`) as cheerio.Cheerio<cheerio.Element>;
     const construct = getDocumentConstruct(mainContainer, cacheKey, name);
 
     // 删除多余 dom
@@ -169,7 +170,7 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
       // 去除死链
       if (!docs.content && docs.toc.length === 0) {
         // do nothing
-      } else {
+      } else if (docs?.url) {
         topDoc.toc.push(docs);
       }
     }
@@ -204,11 +205,7 @@ const main = async () => {
     result.push(await start(aWebsite.entry, aWebsite.name, aWebsite.options));
   }
 
-  fs.writeFileSync(
-    join(__dirname, '../docs/output.json'),
-    JSON.stringify(result, undefined, 2),
-    'utf-8'
-  );
+  fs.writeFileSync(join(__dirname, '../docs/output.json'), JSON.stringify(result, undefined, 2), 'utf-8');
 };
 
 main();
