@@ -56,7 +56,7 @@ const websites: {
     options: {
       mainContainer: '.markdown',
       excludesContainers: ['.__dumi-default-layout-toc'],
-      urlIgnores: [/en-US/],
+      urlIgnores: [/en-US/, /change-log/],
     },
   },
   {
