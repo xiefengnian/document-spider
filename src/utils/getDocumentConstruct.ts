@@ -21,7 +21,7 @@ type DocConstruct = {
 
 type DocConstructWithTagName = {
   content: string;
-  toc: DocConstruct[];
+  toc: DocConstructWithTagName[];
   title: string;
   tagName: string;
   url: string;
@@ -31,6 +31,7 @@ type DocConstructWithTagName = {
 
 type DocConstructWithTag = {
   tag: 'TEXT' | 'API' | 'DEMO';
+  toc: DocConstructWithTag[];
 } & Omit<DocConstructWithTagName, 'tagName'>;
 
 /**
@@ -230,6 +231,8 @@ export const getDocumentConstruct = (
 
   // 最后整理数据结构
   for (let i = 0; i < docConstructWithTagName.length; i++) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const header: DocConstructWithTag & { tagName: string } = {
       ...docConstructWithTagName[i],
       tag:
@@ -284,6 +287,23 @@ export const getDocumentConstruct = (
       }
     }
   }
+
+  // 有可能出现 API 是多层级的结构
+  // h2:API > h3 > table
+  // 从父级不断向下传染
+
+  const dealWithAPI = (node: DocConstructWithTag, shouldBeAPI: boolean) => {
+    if (shouldBeAPI) {
+      node.tag = 'API';
+    }
+    node.toc.forEach((item) => {
+      dealWithAPI(item, node.tag === 'API');
+    });
+  };
+
+  docConstructWithTag.forEach((item) => {
+    dealWithAPI(item, item.tag === 'API');
+  });
 
   return docConstructWithTag;
 };
