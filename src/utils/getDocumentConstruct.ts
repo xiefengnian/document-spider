@@ -67,9 +67,9 @@ export const getDocumentConstruct = (
           undefined,
           0
         )
-          .replace(/\n/g, '')
+          ?.replace(/\n/g, '')
           // 替换掉单引号，会中断 JSON
-          .replace(/'/g, '%quote%')}'></div>`
+          ?.replace(/'/g, '%quote%')}'></div>`
       );
     });
   };
@@ -259,7 +259,8 @@ export const getDocumentConstruct = (
     ({ text, tagName, content, url, className, title }) => {
       // 针对表格进行优化：把表格的每一行变成 toc: 'API'
       if (className === TABLE_PLACEHOLDER_CLASS_NAME) {
-        const tableContent = JSON.parse(text.replace(/%quote%/, "'")) || [];
+        const tableContent =
+          JSON.parse(text?.replace(/%quote%/, "'") || '[]') || [];
         const tableToc: DocConstructWithTagName['toc'] = tableContent.map(
           (item: Record<string, any>) => {
             const itemKeys = Object.keys(item);
