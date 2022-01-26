@@ -19,7 +19,6 @@ type DocConstructWithTagName = {
   tagName: string;
   url: string;
   className: string;
-  links: { title: string; url: string }[];
 };
 
 type DocConstructWithTag = {
@@ -58,6 +57,16 @@ export const getDocumentConstruct = (
 
     tables.each((i) => {
       const table = tables.eq(i);
+      console.log(
+        JSON.stringify(
+          Tabletojson.convert(table.parent().html() || '')?.[0] || [],
+          undefined,
+          0
+        )
+          ?.replace(/\n/g, '')
+          // 替换掉单引号，会中断 JSON
+          ?.replace(/'/g, '%quote%')
+      );
       table.replaceWith(
         // ATTR_NAME_TABLE 一定是单引号，不然 JSON 会中断
         // 使用 attr 存储避免被父容器的 text() 捕获到
@@ -259,8 +268,13 @@ export const getDocumentConstruct = (
     ({ text, tagName, content, url, className, title }) => {
       // 针对表格进行优化：把表格的每一行变成 toc: 'API'
       if (className === TABLE_PLACEHOLDER_CLASS_NAME) {
-        const tableContent =
-          JSON.parse(text?.replace(/%quote%/, "'") || '[]') || [];
+        let tableContent = [];
+        try {
+          tableContent =
+            JSON.parse(text?.replace(/%quote%/, "'") || '[]') || [];
+        } catch (error) {
+          console.log('解析表单JSON错误：', text);
+        }
         const tableToc: DocConstructWithTagName['toc'] = tableContent.map(
           (item: Record<string, any>) => {
             const itemKeys = Object.keys(item);
@@ -269,6 +283,9 @@ export const getDocumentConstruct = (
               content: JSON.stringify(item),
               tagName: TABLE_API_SPECIAL_NAME,
               tag: 'API',
+              toc: [],
+              url: '',
+              className: '',
             };
           }
         );
@@ -280,7 +297,6 @@ export const getDocumentConstruct = (
           className,
           url,
           title: title || '',
-          links: [],
         };
       }
       if (isTitle(tagName)) {
@@ -292,7 +308,6 @@ export const getDocumentConstruct = (
           tag: undefined,
           url,
           className,
-          links: [],
         };
       } else {
         return {
@@ -303,7 +318,6 @@ export const getDocumentConstruct = (
           tag: undefined,
           url,
           className,
-          links: [],
         };
       }
     }
