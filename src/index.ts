@@ -16,8 +16,6 @@ export type Docs = {
   toc: Docs[];
   // 文本内容
   content: string;
-  // 页面中的超链接
-  links: { title: string; url: string }[];
 };
 
 type Options = {
@@ -52,7 +50,7 @@ const websites: {
   },
   {
     name: 'procomponents',
-    entry: 'https://procomponents.ant.design/',
+    entry: 'https://procomponents.ant.design/components/card',
     options: {
       mainContainer: '.markdown',
       excludesContainers: ['.__dumi-default-layout-toc'],
@@ -94,7 +92,6 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
     title: name,
     url: entryWebsite,
     content: '',
-    links: [],
   };
 
   const getWebsite = async (website: string) => {
@@ -139,26 +136,6 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
 
     const links = $('a');
 
-    const getLinks = () => {
-      const urlSet = new Set<string>();
-      const tmpLinks: { title: string; url: string }[] = [];
-      links.map((i) =>
-        tmpLinks.push({
-          title: links.eq(i).text(),
-          url: links.eq(i).attr('href') || '',
-        })
-      );
-      const result: typeof tmpLinks = [];
-      for (let i = 0; i < tmpLinks.length; i++) {
-        if (urlSet.has(tmpLinks[i].url) || !tmpLinks[i].title) {
-          continue;
-        }
-        urlSet.add(tmpLinks[i].url);
-        result.push(tmpLinks[i]);
-      }
-      return result;
-    };
-
     const docs: Docs = {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -166,7 +143,6 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
       title: $('title').text(),
       url: cacheKey,
       content: '',
-      links: getLinks(),
     };
 
     if (!topDoc) {

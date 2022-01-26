@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, constant } from 'lodash';
 import { Tabletojson } from 'tabletojson';
 
 type SerializationHtml = {
@@ -10,13 +10,6 @@ type SerializationHtml = {
   title?: string;
   url: string;
   className: string;
-};
-
-type DocConstruct = {
-  content: string;
-  toc: DocConstruct[];
-  title: string;
-  url: string;
 };
 
 type DocConstructWithTagName = {
@@ -48,6 +41,10 @@ type DocConstructWithTag = {
 
 const TABLE_PLACEHOLDER_CLASS_NAME = 'DS__internal_table_placeholder';
 
+const TABLE_API_SPECIAL_NAME = 'table_api_special_name';
+
+const ATTR_NAME_TABLE = 'data-ds__internal_table__';
+
 export const getDocumentConstruct = (
   root: cheerio.Cheerio<cheerio.Element>,
   entryUrl: string,
@@ -62,10 +59,17 @@ export const getDocumentConstruct = (
     tables.each((i) => {
       const table = tables.eq(i);
       table.replaceWith(
+        // ATTR_NAME_TABLE 一定是单引号，不然 JSON 会中断
+        // 使用 attr 存储避免被父容器的 text() 捕获到
         `
-        <div class="${TABLE_PLACEHOLDER_CLASS_NAME}">${JSON.stringify(
-          Tabletojson.convert(table.parent().html() || '')[0]
-        )}</div>`
+        <div class="${TABLE_PLACEHOLDER_CLASS_NAME}" ${ATTR_NAME_TABLE}='${JSON.stringify(
+          Tabletojson.convert(table.parent().html() || '')[0],
+          undefined,
+          0
+        )
+          .replace(/\n/g, '')
+          // 替换掉单引号，会中断 JSON
+          .replace(/'/g, '%quote%')}'></div>`
       );
     });
   };
@@ -81,9 +85,12 @@ export const getDocumentConstruct = (
       const child = children.eq(i);
       const { type, name: tagName } = child[0];
       const id = child.attr('id');
+
+      const isTable = child.attr('class') === TABLE_PLACEHOLDER_CLASS_NAME;
+
       const htmlConstruct = {
         tagName: tagName,
-        text: child.text(),
+        text: isTable ? child.attr(ATTR_NAME_TABLE) || '' : child.text(),
         children: [],
         url: id ? entryUrl + '#' + id : '',
         className: child.attr('class') || '',
@@ -106,6 +113,47 @@ export const getDocumentConstruct = (
     className: root.attr('class') || '',
   });
 
+  //table提到顶级
+  if (name !== 'ant-design') {
+    const needInsertTable: [typeof htmlConstruct, number[]][] = [];
+    // 将 html 中的 table 预先抽取到顶级
+    const preSerializeTable = (
+      construct: typeof htmlConstruct,
+      indexRecord: number[]
+    ) => {
+      if (construct.className === TABLE_PLACEHOLDER_CLASS_NAME) {
+        console.log(construct, indexRecord);
+        // 直接在这处理会导致序号错误
+        needInsertTable.push([
+          JSON.parse(JSON.stringify(construct)),
+          indexRecord,
+        ]);
+        // 软删除
+        construct.className = '';
+        construct.text = '';
+        construct.tagName = '';
+        construct.children = [];
+        construct.url = '';
+        return;
+      }
+      construct.children.forEach((item, i) => {
+        preSerializeTable(item, [...indexRecord, i]);
+      });
+    };
+    preSerializeTable(htmlConstruct, []);
+
+    needInsertTable.forEach((item, addedIndex) => {
+      const [construct, indexRecord] = item;
+      if (name !== 'ant-design') {
+        htmlConstruct.children.splice(
+          indexRecord[0] + addedIndex,
+          0,
+          construct
+        );
+      }
+    });
+  }
+
   const serializedHtml: SerializationHtml[] = [];
 
   const isTitle = (tagName: string) => /^h[1-6]$/.test(tagName);
@@ -122,7 +170,10 @@ export const getDocumentConstruct = (
      */
 
     // TODO: 已知 bug：antd 中同级的 pre.code 无法独立抽取
-    if (name === 'antd' && current.className === 'code-box') {
+    if (
+      (name === 'antd' || name === 'antd-design') &&
+      current.className === 'code-box'
+    ) {
       const url = current.url;
       let title = '';
       let content2 = '';
@@ -150,6 +201,11 @@ export const getDocumentConstruct = (
       });
       return;
     }
+    // 因为表格被提前了，所以提前处理一下
+    if (current.className === TABLE_PLACEHOLDER_CLASS_NAME) {
+      serializedHtml.push(current);
+      return;
+    }
 
     if (children.find(({ tagName }) => isTitle(tagName))) {
       for (let i = 0; i < children.length; i++) {
@@ -171,7 +227,8 @@ export const getDocumentConstruct = (
               // getRequiredNode(nextChild);
               continue;
             }
-            // 针对处理后的表格独立处理
+
+            // 针对处理后的表格独立处理（只对antd场景有效）
             if (nextChild.className === TABLE_PLACEHOLDER_CLASS_NAME) {
               // getRequiredNode(nextChild);
               appendToEnd.push(nextChild);
@@ -197,10 +254,34 @@ export const getDocumentConstruct = (
 
   // 抽取必须的节点，其余省略
   getRequiredNode(cloneDeep(htmlConstruct));
-
   // 转化一轮格式
   const docConstructWithTagName: DocConstructWithTagName[] = serializedHtml.map(
     ({ text, tagName, content, url, className, title }) => {
+      // 针对表格进行优化：把表格的每一行变成 toc: 'API'
+      if (className === TABLE_PLACEHOLDER_CLASS_NAME) {
+        const tableContent = JSON.parse(text.replace(/%quote%/, "'")) || [];
+        const tableToc: DocConstructWithTagName['toc'] = tableContent.map(
+          (item: Record<string, any>) => {
+            const itemKeys = Object.keys(item);
+            return {
+              title: item[itemKeys[0]],
+              content: JSON.stringify(item),
+              tagName: TABLE_API_SPECIAL_NAME,
+              tag: 'API',
+            };
+          }
+        );
+        return {
+          content: '',
+          tagName,
+          tag: 'API',
+          toc: tableToc,
+          className,
+          url,
+          title: title || '',
+          links: [],
+        };
+      }
       if (isTitle(tagName)) {
         return {
           content: content || '',
@@ -229,18 +310,20 @@ export const getDocumentConstruct = (
 
   const docConstructWithTag: DocConstructWithTag[] = [];
 
+  const getTag = (tagName: string): DocConstructWithTag['tag'] => {
+    if (tagName === 'code') {
+      return 'DEMO';
+    }
+    return 'TEXT';
+  };
+
   // 最后整理数据结构
   for (let i = 0; i < docConstructWithTagName.length; i++) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const header: DocConstructWithTag & { tagName: string } = {
       ...docConstructWithTagName[i],
-      tag:
-        docConstructWithTagName[i].tagName === 'code'
-          ? 'DEMO'
-          : /API/.test(docConstructWithTagName[i].title)
-          ? 'API'
-          : 'TEXT',
+      tag: getTag(docConstructWithTagName[i].tagName),
     };
 
     if (header.tagName === 'h1') {
@@ -287,23 +370,5 @@ export const getDocumentConstruct = (
       }
     }
   }
-
-  // 有可能出现 API 是多层级的结构
-  // h2:API > h3 > table
-  // 从父级不断向下传染
-
-  const dealWithAPI = (node: DocConstructWithTag, shouldBeAPI: boolean) => {
-    if (shouldBeAPI) {
-      node.tag = 'API';
-    }
-    node.toc.forEach((item) => {
-      dealWithAPI(item, node.tag === 'API');
-    });
-  };
-
-  docConstructWithTag.forEach((item) => {
-    dealWithAPI(item, item.tag === 'API');
-  });
-
   return docConstructWithTag;
 };
