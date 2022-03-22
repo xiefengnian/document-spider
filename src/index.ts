@@ -36,7 +36,7 @@ const websites: {
     options: {
       mainContainer: '.main-container',
       excludesContainers: ['.rc-footer', '.toc-affix'],
-      urlFilters: [/-cn/],
+      urlFilters: [/-cn/, /changelog/],
     },
   },
   {
@@ -163,7 +163,12 @@ const start = async (entryWebsite: string, name: string, options: Options) => {
       .sort();
 
     for await (const href of sortedLinks) {
-      if (href?.startsWith('/') && !href?.startsWith('//') && href !== '/') {
+      if (
+        href?.startsWith('/') &&
+        !href?.startsWith('//') &&
+        href !== '/' &&
+        !href.includes('#')
+      ) {
         await getWebsite(format({ ...urlObject, pathname: href, hash: '' })); // 又是 href 后是带 hash 的，把原来的 hash 注销一下
       }
     }
